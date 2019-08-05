@@ -20,23 +20,19 @@
     "react-cookie": "^4.0.1",
     "react-dom": "^16.8.6",
     "react-router-dom": "^5.0.1",
-    "react-scripts": "3.0.1",
+    "react-scripts": "^3.0.1",
     "react-table": "^6.10.0",
     "reactstrap": "^8.0.1",
     "typescript": "3.5.3"
   },
-  "scripts": {
-    "start": "cp ../.env .env; react-scripts start",
-    "build": "react-scripts build",
-    "postbuild": "rsync -av build/ ../server/build/",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "gunicorn": "gunicorn -b 0.0.0.0:80 --chdir .. run_server:app",
-    "gunicorn-dev": "gunicorn -b 127.0.0.1:5000 --reload --chdir .. run_server:app",
-    "dev": "concurrently --kill-others \"yarn start\" \"npm run gunicorn-dev\""
-  },
   "eslintConfig": {
     "extends": "react-app"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
   },
   "proxy": "http://localhost:5000",
   "browserslist": {
