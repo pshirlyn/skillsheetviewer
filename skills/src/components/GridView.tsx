@@ -1,56 +1,38 @@
 import React from "react";
-
 import "react-table/react-table.css";
 import "./GridView.css";
 import ReactTable from "react-table";
-import {
-  Row,
-  Col,
-  Badge,
-  Button,
-  FormGroup,
-  Input,
-  Container
-} from "reactstrap";
+import { Row, Col, Badge, Button, Input, Container } from "reactstrap";
 
-import {
-  Card,
-  InputGroup,
-  InputGroupAddon,
-  CustomInput,
-  InputGroupText
-} from "reactstrap";
+import { Card, InputGroup, InputGroupAddon, CustomInput } from "reactstrap";
+import useViewer from "../hooks/useViewer";
+import { User } from "../Types";
+import useData from "../hooks/useData";
 
 const STARTINGYEAR = 2020;
 
-type User = {
-  id: string;
-  name: string;
-  skillsheet: string;
-  school: string;
-  tracks: string;
-  email: string;
-  major: string;
-  year: string;
-};
-
 const GridView: React.FC = () => {
-  const [completeList, setCompleteList] = React.useState<User[]>([
-    {
-      id: "1oifjasba",
-      name: "TEST",
-      email: "test@test.tt",
-      school: "Test Institute",
-      tracks: "hi,tes",
-      major: "cs",
-      year: "2021",
-      skillsheet:
-        "https://s3.us-east-1.amazonaws.com/hackmit-skill-sheets-2019/60e7556d-6377-4563-aa1a-e1c30a32c7cd"
-    }
-  ]);
+  const [shouldRefreshData, setShouldRefreshData] = React.useState(true);
+  const [completeList, setCompleteList] = React.useState<User[]>([]);
   const [filterYear, setFilterYear] = React.useState("ALL");
   const [searchValue, setSearchValue] = React.useState("");
   const [user, setUser] = React.useState<User | null>(null);
+  const { refreshData } = useData();
+  const { isLoggedIn } = useViewer();
+
+  React.useEffect(() => {
+    if (shouldRefreshData && isLoggedIn) {
+      setShouldRefreshData(false);
+      (async () => {
+        try {
+          const newUsers = await refreshData();
+          setCompleteList(newUsers);
+        } catch (ex) {
+          alert(ex);
+        }
+      })();
+    }
+  }, [shouldRefreshData]);
 
   const filteredList = React.useMemo(() => {
     let finalList: User[] = completeList;
@@ -84,12 +66,16 @@ const GridView: React.FC = () => {
     [user]
   );
 
+  if (!isLoggedIn) {
+    window.location.href = "/landing";
+    return null;
+  }
+
   const columns = [
     {
       Header: "",
       Cell: (props: { original: null }) => (
         <>
-          <Button color={user && user.id ? "info" : "danger"}>Star</Button>
           <Button
             onClick={e => toggleUser(props.original)}
             color={user === props.original ? "info" : "danger"}
@@ -97,7 +83,8 @@ const GridView: React.FC = () => {
             View
           </Button>
         </>
-      )
+      ),
+      maxWidth: 80
     },
     { Header: "Name", accessor: "name" },
     { Header: "School", accessor: "school" },
@@ -129,6 +116,7 @@ const GridView: React.FC = () => {
           type="application/pdf"
         >
           <iframe
+            title="skillsheet"
             src={
               "https://docs.google.com/viewer?url=" +
               user.skillsheet +

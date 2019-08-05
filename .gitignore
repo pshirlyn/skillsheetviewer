@@ -1,4 +1,6 @@
 env/
+.env
 **/__pycache__/
 config.py
 migrations
+service_account.json

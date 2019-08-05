@@ -12,14 +12,28 @@ import {
   DropdownMenu,
   DropdownItem
 } from "reactstrap";
-import { useCookies } from "react-cookie";
-import useLogin from "./hooks/Login";
-import useViewer, { Query } from "./hooks/Viewer";
+import useLogin from "./hooks/useLogin";
+import useViewer, { Query } from "./hooks/useViewer";
 
 const AppHeader: React.FC = () => {
   const [isOpen, setIsOpen] = React.useState(false);
-  const viewer = useViewer();
+  const { redirectToDopeAuth } = useLogin();
+  const { viewer, isLoggedIn } = useViewer();
   const { logout } = useLogin();
+  const viewerButton = isLoggedIn ? (
+    <UncontrolledDropdown nav inNavbar>
+      <DropdownToggle nav caret>
+        Hello {viewer(Query.name)}
+      </DropdownToggle>
+      <DropdownMenu right>
+        <DropdownItem onClick={logout}>Logout</DropdownItem>
+      </DropdownMenu>
+    </UncontrolledDropdown>
+  ) : (
+    <NavItem>
+      <NavLink onClick={redirectToDopeAuth}>Login with DopeAuth</NavLink>
+    </NavItem>
+  );
   return (
     <div>
       <Navbar color="light" light expand="md">
@@ -30,14 +44,7 @@ const AppHeader: React.FC = () => {
             <NavItem>
               <NavLink href="mailto:sponsor@hackmit.org">Contact Us</NavLink>
             </NavItem>
-            <UncontrolledDropdown nav inNavbar>
-              <DropdownToggle nav caret>
-                Hello {viewer(Query.name)}
-              </DropdownToggle>
-              <DropdownMenu right>
-                <DropdownItem onClick={logout}>Logout</DropdownItem>
-              </DropdownMenu>
-            </UncontrolledDropdown>
+            {viewerButton}
           </Nav>
         </Collapse>
       </Navbar>
