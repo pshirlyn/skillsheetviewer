@@ -42,6 +42,7 @@ def queryUsers():
 
 
 def queryData():
+    """ Returns UserPublic[], {userid => UserPrivate}"""
     print("Updating Data from Google Sheets")
     # 1    _id
     # 2    email
@@ -58,12 +59,14 @@ def queryData():
         wks = mastersheet.worksheet("Data")
         list_of_lists = wks.get_all_values()
         ret = []
+        privateref = {}
         for line in list_of_lists:
             if len(line) < 12 or "#" in line[0]:
                 continue
             # Will not offer for students not interested in sponsorship opportunities
             if line[11] != "TRUE":
                 continue
+            urlsafename = line[3].replace(" ", "_")
             ret.append({
                 "id": line[1],
                 "name": line[3],
@@ -72,9 +75,13 @@ def queryData():
                 "tracks": ",".join(list(filter(lambda x: len(x) > 0, [line[8], line[9], line[10]]))),
                 "major": line[6],
                 "year": line[5],
-                "skillsheet": app.config["GSHEETS_SKILLSHEET_URL_PREAPPEND"] + line[7]
+                "skillsheet": f"/api/v1/skillsheet/{line[1]}/{urlsafename}_{line[5]}.pdf"
             })
-        return ret
-    except:
+            privateref[line[1]] = {
+                "skillsheet": app.config["GSHEETS_SKILLSHEET_URL_PREAPPEND"] + line[7]
+            }
+        return ret, privateref
+    except Exception as e:
+        print(e)
         print("could not open Data tab")
-    return []
+    return [], {}

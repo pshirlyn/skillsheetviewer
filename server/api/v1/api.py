@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, request, Response
 from flask_restful import Api, Resource, reqparse
 from server.app import app
 from server.controllers.gsheets import queryUsers, queryData
@@ -9,7 +9,7 @@ import json
 # no need to specify that
 
 USERS = queryUsers()
-DATA = queryData()
+DATA, DATAPRIVATE = queryData()
 
 
 class HelloWorld(Resource):
@@ -24,8 +24,9 @@ class Refresh(Resource):
     def post(self):
         global USERS
         global DATA
+        global DATAPRIVATE
         USERS = queryUsers()
-        DATA = queryData()
+        DATA, DATAPRIVATE = queryData()
         return {'success': True}
 
 
@@ -61,6 +62,28 @@ class Users(Resource):
         return {'success': False, 'error': "User can't be verified. Try logging out first. "}
 
 
+class Skillsheet(Resource):
+    def get(self, userid, name):
+        global DATAPRIVATE
+        if userid not in DATAPRIVATE:
+            return
+        resp = requests.request(
+            method=request.method,
+            url=DATAPRIVATE[userid]['skillsheet'],
+            headers={key: value for (key, value)
+                     in request.headers if key != 'Host'},
+            data=request.get_data(),
+            cookies=request.cookies,
+            allow_redirects=False)
+
+        excluded_headers = ['content-encoding',
+                            'content-length', 'transfer-encoding', 'connection']
+        headers = [(name, value) for (name, value) in resp.raw.headers.items()
+                   if name.lower() not in excluded_headers]
+        response = Response(resp.content, resp.status_code, headers)
+        return response
+
+
 # Blueprint for /api/v1 requests
 api = Api(Blueprint('api', __name__))
 
@@ -68,3 +91,4 @@ api = Api(Blueprint('api', __name__))
 api.add_resource(HelloWorld, '')
 api.add_resource(Refresh, '/refresh/' + app.config["GSHEETS_REFRESH_KEY"])
 api.add_resource(Users, '/users')
+api.add_resource(Skillsheet, '/skillsheet/<userid>/<name>')

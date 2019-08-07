@@ -7,7 +7,7 @@ export enum Query {
 }
 
 const useViewer = () => {
-  const [cookies, setCookie, removeCookie] = useCookies([Query.name]);
+  const [cookies] = useCookies([Query.name]);
   const viewer = (value: Query) => {
     return cookies[value];
   };
