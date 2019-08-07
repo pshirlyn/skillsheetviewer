@@ -1,7 +1,8 @@
 import { useCookies } from "react-cookie";
 
 const useLogin = () => {
-  const [cookies, setCookie, removeCookie] = useCookies([
+  // eslint-disable-next-line
+  const [_cookies, setCookie, removeCookie] = useCookies([
     "token",
     "uid",
     "email",

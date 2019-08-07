@@ -8,10 +8,13 @@ import { Card, InputGroup, InputGroupAddon, CustomInput } from "reactstrap";
 import useViewer from "../hooks/useViewer";
 import { User } from "../Types";
 import useData from "../hooks/useData";
+import JSZip from "jszip";
+import fileSaver from "file-saver";
 
 const STARTINGYEAR = 2020;
 
 const GridView: React.FC = () => {
+  const [isDownloading, setIsDownloading] = React.useState(false);
   const [shouldRefreshData, setShouldRefreshData] = React.useState(true);
   const [completeList, setCompleteList] = React.useState<User[]>([]);
   const [filterYear, setFilterYear] = React.useState("ALL");
@@ -32,7 +35,8 @@ const GridView: React.FC = () => {
         }
       })();
     }
-  }, [shouldRefreshData]);
+    // eslint-disable-next-line
+  }, [isLoggedIn, shouldRefreshData]);
 
   const filteredList = React.useMemo(() => {
     let finalList: User[] = completeList;
@@ -126,52 +130,63 @@ const GridView: React.FC = () => {
         </object>
       </Col>
     ) : null;
+
+  const filterView = isDownloading ? (
+    <div> Creating your export... </div>
+  ) : (
+    <>
+      <InputGroup>
+        <InputGroupAddon addonType="prepend">Filter By:</InputGroupAddon>
+        <InputGroupAddon addonType="prepend">
+          <CustomInput
+            id="filter_year_input"
+            type="select"
+            name="filterYear"
+            value={filterYear}
+            onChange={event => setFilterYear(event.target.value)}
+          >
+            <option key="ALL" value="ALL">
+              All years
+            </option>
+            {[
+              STARTINGYEAR,
+              STARTINGYEAR + 1,
+              STARTINGYEAR + 2,
+              STARTINGYEAR + 3
+            ].map(val => {
+              return (
+                <option key={val} value={val}>
+                  {val}
+                </option>
+              );
+            })}
+          </CustomInput>
+        </InputGroupAddon>
+        <Button
+          id="PopoverMoreOptions"
+          type="button"
+          onClick={() => {
+            setIsDownloading(true);
+            downloadZIP(filteredList, () => setIsDownloading(false));
+          }}
+        >
+          Export as ZIP
+        </Button>
+      </InputGroup>
+      <Input
+        name="searchValue"
+        value={searchValue}
+        onChange={event => setSearchValue(event.target.value)}
+        onKeyPress={() => console.log("press")}
+        placeholder="Name, email, year..."
+      />
+    </>
+  );
   return (
     <Row className="GridView-row">
       <Col xs={user == null ? "12" : "6"} className="GridView-flex">
         <Container>
-          <InputGroup>
-            <InputGroupAddon addonType="prepend">Filter By:</InputGroupAddon>
-            <InputGroupAddon addonType="prepend">
-              <CustomInput
-                id="filter_year_input"
-                type="select"
-                name="filterYear"
-                value={filterYear}
-                onChange={event => setFilterYear(event.target.value)}
-              >
-                <option key="ALL" value="ALL">
-                  All years
-                </option>
-                {[
-                  STARTINGYEAR,
-                  STARTINGYEAR + 1,
-                  STARTINGYEAR + 2,
-                  STARTINGYEAR + 3
-                ].map(val => {
-                  return (
-                    <option key={val} value={val}>
-                      {val}
-                    </option>
-                  );
-                })}
-              </CustomInput>
-            </InputGroupAddon>
-
-            <Button id="PopoverMoreOptions" type="button">
-              Export as CSV
-            </Button>
-            <Button id="PopoverMoreOptions" type="button">
-              Export as ZIP
-            </Button>
-          </InputGroup>
-          <Input
-            name="searchValue"
-            value={searchValue}
-            onChange={event => setSearchValue(event.target.value)}
-            onKeyPress={() => console.log("press")}
-            placeholder="Name, email, year..."
-          />
+          {filterView}
           <ReactTable
             data={filteredList}
             columns={columns}
@@ -182,6 +197,48 @@ const GridView: React.FC = () => {
       {pdfView}
     </Row>
   );
+};
+
+function download(zip: JSZip, url: string) {
+  const filename = url.split("/").slice(-1)[0];
+  return new Promise<boolean>((resolve, reject) => {
+    var xhr = new XMLHttpRequest();
+    xhr.responseType = "blob";
+    xhr.onload = () => {
+      zip.file(filename, xhr.response);
+      resolve(true);
+    };
+    xhr.onerror = reject;
+    xhr.open("GET", url, true);
+    xhr.send();
+  });
+}
+const downloadZIP = async (list: User[], done: () => void) => {
+  const zip = JSZip();
+  const folder = zip.folder("hackmit-skillsheets-2019");
+  // Try catch
+  if (
+    !window.confirm(
+      "This may take a while (5 minutes) if you have not filtered anything. Do you want to continue?"
+    )
+  ) {
+    done();
+    return;
+  }
+  const allTasks: Promise<boolean>[] = [];
+  list.forEach((user: User) => {
+    allTasks.push(download(folder, user.skillsheet));
+  });
+  await Promise.all(allTasks);
+  zip.generateAsync({ type: "blob" }).then(
+    blob => {
+      fileSaver.saveAs(blob, "hackmit-skillsheets-2019-filtered.zip");
+    },
+    function(err) {
+      alert("whoops something went wrong :(");
+    }
+  );
+  done();
 };
 
 export default GridView;

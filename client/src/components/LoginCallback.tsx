@@ -37,6 +37,7 @@ const LoginCallback = (props: RouteComponentProps) => {
     } else if (loginStatus === Status.start) {
       setLoginStatus(Status.failed);
     }
+    // eslint-disable-next-line
   }, [isLoggedIn, loginStatus]);
 
   if (loginStatus === Status.start || loginStatus === Status.loading) {
