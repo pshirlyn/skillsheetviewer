@@ -14,7 +14,7 @@ const useLogin = () => {
       encodeURIComponent(process.env.REACT_APP_CALLBACKURL || "");
   };
   const login = async (
-    id: string,
+    uid: string,
     email: string,
     token: string
   ): Promise<Boolean> => {
@@ -28,7 +28,7 @@ const useLogin = () => {
         body: JSON.stringify({
           email: email,
           token: token,
-          id: id
+          uid: uid
         })
       };
       // This is a client side check, however server side checks are also necessary!
@@ -41,7 +41,7 @@ const useLogin = () => {
         const json = await response.json();
         if (json["success"]) {
           setCookie("token", token, { path: "/" });
-          setCookie("uid", id, { path: "/" });
+          setCookie("uid", uid, { path: "/" });
           setCookie("email", email, { path: "/" });
           setCookie("name", email, { path: "/" });
           //TODO(kevinfang): cookie security
