@@ -46,7 +46,7 @@ class Users(Resource):
         # since this is serverside we want to also make sure that the callbackurl is correct!
         PARAMS = {
             "email": email,
-            "id": data['uid'],
+            "uid": data['uid'],
             "token": data['token'],
             "callback": app.config["REACT_APP_CALLBACKURL"]
         }
